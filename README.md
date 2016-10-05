@@ -1,7 +1,30 @@
 # fer2py
 
-Python wrapper za Fer2 zasnovan na bibliotekama requests i BeautifulSoup4. Svodi se na parsiranje html-a.
+Python wrapper (?) za Fer2 zasnovan na bibliotekama requests i BeautifulSoup4. Svodi se na parsiranje html-a.
 
 ## Korištenje
 
+Kopiraj si kod ili .py datoteke.
+
 ## Primjeri
+
+Tipična uporaba
+``` python
+from fer2py import Fer2
+
+forum = Fer2()
+forum.logIn('1234','malipiso93')
+
+for user in forum.getUsers(gender=2) #1:ferovac, 2:ferovka
+  forum.giveGift(user["userid"], public_message="bi li htjela imati ružnog dečka", gift=238)
+```
+
+``` python
+from fer2py import Fer2
+
+forum = Fer2()
+forum.logIn('1234','malipiso93')
+
+for user in forum.getUsers(gender=2) #1:ferovac, 2:ferovka
+  forum.giveGift(user["userid"], public_message="bi li htjela imati ružnog dečka", gift=238)
+```
