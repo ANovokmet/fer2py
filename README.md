@@ -35,6 +35,7 @@ for user in forum.getBirthdayUsers():
 
 Šta je ovo:
 ``` python
+# neko random ime
 users = forum.ajaxDoUserSearch("iva")
 # uzrokuje povećanje jednog broja za 1000
 for i in range(0, 1000):
