@@ -27,5 +27,5 @@ Drugi primjer:
 for user in forum.getBirthdayUsers():
   info = forum.getUser(user["userid"])
   if info["Spol"] == 'ferovka':
-    sendPrivateMessage([user["username"]], "Hej", message="za tvoj rođendan te vodim na kavu")
+    forum.sendPrivateMessage([user["username"]], "Hej", message="za tvoj rođendan te vodim na kavu")
 ```
