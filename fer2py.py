@@ -1,15 +1,17 @@
 __author__ = 'Ante'
 from bs4 import BeautifulSoup
 from hashlib import md5
-import requests, re
-import datetime
+import requests, re, datetime
 
 baseurl = "http://www.fer2.net/"
 
 class Fer2(object):
+
+
     def __init__(self):
         self._session = requests.session()
         self._security_token = ''
+        self._allowed_actions = ['groan','lol','thanks']
         print('initiated')
 
     def logIn(self, username, password):
@@ -30,8 +32,6 @@ class Fer2(object):
 
         res = self._session.post('http://www.fer2.net/login.php?do=login', data=data)
         if res.status_code == 200:
-            print(res.text)
-            print(res.headers['content-type'])
             print('logged in')
         else:
             print('error '+str(res.status_code))
@@ -51,8 +51,6 @@ class Fer2(object):
             "http://www.fer2.net/memberlist.php?&pp={0}&order={1}&sort={2}&page={3}".format(pp, order, sort, page))
 
         soup = BeautifulSoup(res.text, 'html.parser')
-        print(soup.get_text())
-
         users = []
 
         for usertd in soup.find_all('td', {'class': "alt1Active"}):
@@ -101,7 +99,7 @@ class Fer2(object):
         res = self._session.post("http://www.fer2.net/memberlist.php?do=getall", data=data)
 
         soup = BeautifulSoup(res.text, 'html.parser')
-        print(soup.get_text())
+
         users = []
 
         for usertd in soup.find_all('td', {'class': "alt1Active"}):
@@ -128,7 +126,7 @@ class Fer2(object):
 
         res = self._session.get(url)
         soup = BeautifulSoup(res.text, 'html.parser')
-        print(soup.get_text())
+
         userdata = {}
         dl = soup.find('dl', {'class': 'list_no_decoration profilefield_list'})
         for dt, dd in zip(dl.find_all('dt'), dl.find_all('dd')):
@@ -150,9 +148,6 @@ class Fer2(object):
 
         res = self._session.post("http://www.fer2.net/gifts.php?do=insert", data=data)
 
-        soup = BeautifulSoup(res.text, 'html.parser')
-        print(soup.get_text())
-
     def sendPrivateMessage(self, recipients, title, message="", ):
         data = {
             'recipients': '; '.join(recipients),
@@ -173,9 +168,6 @@ class Fer2(object):
 
         res = self._session.post("http://www.fer2.net/private.php?do=insertpm&pmid=", data=data)
 
-        soup = BeautifulSoup(res.text, 'html.parser')
-        print(soup.get_text())
-
     def sendProfileMessage(self, userid, message):
 
         data = {
@@ -188,7 +180,7 @@ class Fer2(object):
             'do': 'message',
             'u': userid,
             'u2': '',
-            'loggedinuser': 9993,
+            #'loggedinuser': 9993,
             'parseurl': 1,
             # 'lastcomment':1474612848,
             'allow_ajax_qc': 1,
@@ -197,7 +189,6 @@ class Fer2(object):
         }
 
         res = self._session.post("http://www.fer2.net/visitormessage.php?do=message", data=data)
-        print(res.text)
 
     def ajaxDoUserSearch(self, fragment):
 
@@ -228,7 +219,7 @@ class Fer2(object):
 
         users = []
         fragment = soup.find('td', { 'title' : 'Danas'})
-        print(fragment.text)
+
         for userlink in fragment.find_all('a'):
             profile = userlink.get('href')
             user = {
@@ -238,3 +229,73 @@ class Fer2(object):
             }
             users.append(user)
         return users
+
+
+
+    def doActionThread(self, threadid, page, action, remove=False, ajaxpost=False):
+        if action not in self._allowed_actions:
+            raise Exception('action not allowed')
+
+        html = self._session.get('http://www.fer2.net/showthread.php?t='+str(threadid)+'&page='+str(page))
+        soup = BeautifulSoup(html.text, 'html.parser')
+
+        #securitytoken = soup.find('input', {'name':'securitytoken'}).get('value')
+        if not remove:
+            do = "post_"+action+"_add"
+        else:
+            do = "post_"+action+"_remove_user"
+
+        for link in soup.find_all('a'):
+            link = str(link.get('href'))
+            if(do in link):
+                if not ajaxpost:
+                    self._session.get(baseurl+link)
+                else:
+                    parts = link.split('?')
+                    if not remove:
+                        payload = getPayload(parts[1])
+                    else:
+                        payload = getPayload(parts[1], self._security_token)
+
+                    self._session.post(baseurl+parts[0], data=payload)
+
+    #groan lol thanks
+    def doActionPost(self, postid, action, remove=False):
+        if action not in self._allowed_actions:
+            raise Exception('action not allowed')
+
+        if not remove:
+            do = "post_"+action+"_add"
+        else:
+            do = "post_"+action+"_remove_user"
+
+        data = {
+            'do': do,
+            'using_ajax':'1',
+            'p': str(postid),
+            'securitytoken': self._security_token
+        }
+
+        res = self._session.post('http://www.fer2.net/post_'+action+'.php', data=data)
+
+    def hitProfile(self, userid):
+        res = self._session.head('http://www.fer2.net/member.php?u='+str(userid))
+
+def getPayload(paramsString, security_token = None):
+
+    parts1 = paramsString.split("&securitytoken=")
+    parts2 = parts1[0].split("&p=")
+    parts3 = parts2[0].split("do=")
+
+    if(security_token==None):
+        security_token = parts1[1]
+    p = parts2[1]
+    do = parts3[1]
+
+    payload ={
+        'do':do,
+        'using_ajax':'1',
+        'p':p,
+        'securitytoken':security_token
+    }
+    return payload
