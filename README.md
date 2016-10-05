@@ -14,11 +14,14 @@ from fer2py import Fer2
 
 forum = Fer2()
 forum.logIn('1234','malipiso93')
+# ažurira security token
+forum.getSecurityToken() 
 ```
 
 Tipična uporaba:
 ``` python
-for user in forum.getUsers(gender=2): #1:ferovac, 2:ferovka
+# 1:ferovac, 2:ferovka
+for user in forum.getUsers(gender=2, page=1): 
   forum.giveGift(user["userid"], public_message="bi li htjela imati ružnog dečka", gift=238)
 ```
 
