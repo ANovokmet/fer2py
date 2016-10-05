@@ -4,7 +4,7 @@ Python wrapper (?) za Fer2 zasnovan na bibliotekama requests i BeautifulSoup4. S
 
 ## Korištenje
 
-Kopiraj si kod ili .py datoteke.
+Kopiraj si kod ili .py datoteke. Prije tog si nabavi requests i BeautifulSoup4.
 
 ## Primjeri
 
@@ -32,3 +32,22 @@ for user in forum.getBirthdayUsers():
   if info["Spol"] == 'ferovka':
     forum.sendPrivateMessage([user["username"]], "Hej", message="za tvoj rođendan te vodim na kavu")
 ```
+
+Šta je ovo:
+``` python
+users = forum.ajaxDoUserSearch("iva")
+# uzrokuje povećanje jednog broja za 1000
+for i in range(0, 1000):
+  forum.hitProfile(users[0]["userid"])
+  
+forum.sendProfileMessage(self, users[0]["userid"], "primjeti me")
+```
+
+Kad ti frend kaže id dobrog posta a nemaš browser pri ruci:
+``` python
+forum.doActionPost(2442691, 'thanks')
+# zeka peka xD
+forum.doActionPost(2442691, 'thanks', remove=True)
+```
+
+
