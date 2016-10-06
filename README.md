@@ -18,6 +18,12 @@ forum.logIn('1234','malipiso93')
 forum.getSecurityToken() 
 ```
 
+Uporaba:
+``` python
+for thread in forum.getThreads(predmetnidio=True, includeinfo=False):
+  print(thread['title'])
+```
+
 Tipična uporaba:
 ``` python
 # 1:ferovac, 2:ferovka
@@ -44,11 +50,13 @@ for i in range(0, 1000):
 forum.sendProfileMessage(self, users[0]["userid"], "primjeti me")
 ```
 
-Kad ti frend kaže id dobrog posta a nemaš browser pri ruci:
+Burza hvalaova:
 ``` python
-forum.doActionPost(2442691, 'thanks')
-# zeka peka xD
-forum.doActionPost(2442691, 'thanks', remove=True)
+for post in forum.getPostsByUser(9323):
+  forum.doActionPost(post['postid'], 'thanks')
+  
+for post in forum.getThreadPosts(17653, page=2902):
+  forum.doActionPost(post['postid'], 'thanks', remove=True)
 ```
 
 
