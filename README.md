@@ -4,7 +4,10 @@ Python wrapper (?) za Fer2 zasnovan na bibliotekama requests i BeautifulSoup4. S
 
 ## Korištenje
 
-Kopiraj si kod ili .py datoteke. Prije tog si nabavi requests i BeautifulSoup4.
+```
+pip install fer2py
+```
+Alternativno, kopiraj si kod ili .py datoteke. Prije tog si nabavi requests i BeautifulSoup4.
 
 ## Primjeri
 
