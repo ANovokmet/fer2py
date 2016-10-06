@@ -1,7 +1,7 @@
 __author__ = 'Ante'
 from bs4 import BeautifulSoup
 from hashlib import md5
-import requests, re, datetime
+import requests, re, datetime, math
 
 baseurl = "http://www.fer2.net/"
 
@@ -236,8 +236,8 @@ class Fer2(object):
         if action not in self._allowed_actions:
             raise Exception('action not allowed')
 
-        html = self._session.get('http://www.fer2.net/showthread.php?t='+str(threadid)+'&page='+str(page))
-        soup = BeautifulSoup(html.text, 'html.parser')
+        res = self._session.get('http://www.fer2.net/showthread.php?t='+str(threadid)+'&page='+str(page))
+        soup = BeautifulSoup(res.text, 'html.parser')
 
         #securitytoken = soup.find('input', {'name':'securitytoken'}).get('value')
         if not remove:
@@ -280,6 +280,119 @@ class Fer2(object):
 
     def hitProfile(self, userid):
         res = self._session.head('http://www.fer2.net/member.php?u='+str(userid))
+
+    def getThreads(self, predmetnidio=False, includeinfo=False):
+        if not predmetnidio:
+            res = self._session.get("http://www.fer2.net/index.php?area=vbcmsarea_home1")
+        else:
+            res = self._session.get("http://www.fer2.net/index.php?area=vbcmsarea_home")
+
+        soup = BeautifulSoup(res.text, 'html.parser')
+
+        threads = []
+
+        if not includeinfo and predmetnidio:
+            trs = soup.find_all('tr', {'class' : 'alt1'})[5:]
+        else:
+            trs = soup.find_all('tr', {'class' : 'alt1'})
+
+        for tr in trs:
+            links = tr.find_all('a')
+
+            if len(links) == 6:
+                links = links[1:]
+            print(links[0].get_text())
+
+            thread = {
+                'title' : links[0].get_text(),
+                'threadpath' : links[0].get('href'),
+                'threadid' : int(links[0].get('href').split("?t=")[1]),
+                'forum' : links[1].get_text(),
+                'forumpath' : links[1].get('href'),
+                'forumid' : int(links[1].get('href').split("?f=")[1]),
+                'numofreplies' : int(links[2].get_text()),
+                'numofpages' : math.ceil(int(links[2].get_text())/40),
+                'newpostpath' : links[4].get('href')
+            }
+            threads.append(thread)
+
+        return threads
+
+    def getThreadPostStats(self, threadid):
+        res = self._session.get("http://www.fer2.net/misc.php?do=whoposted&t="+str(threadid))
+        soup = BeautifulSoup(res.text, 'html.parser')
+
+        data = []
+        trs = soup.find_all('tr')[2:-1]
+        for tr in trs:
+            links = tr.find_all('a')
+            userdata ={
+                'username' : links[0].get_text(),
+                'userprofile' : links[0].get('href'),
+                'userid' : int(links[0].get('href').split("?u=")[1]),
+                'postcount' : int(links[1].get_text()),
+                'searchpath' : links[1].get('href') # dodati pp=100
+            }
+            data.append(userdata)
+        return data
+
+
+    def getThreadPosts(self, threadid, page=1, pp=40):
+        res = self._session.get("http://www.fer2.net/showthread.php?t={}&page={}&pp={}".format(threadid, page, pp))
+        soup = BeautifulSoup(res.text, 'html.parser')
+
+        posts = []
+        posttables = soup.find_all('table', id=re.compile("^post\d+"))
+        for posttable in posttables:
+            postid = posttable.get('id')[4:]
+            postmessage = posttable.find('div', id='post_message_'+postid)
+            postmenu = posttable.find('div', id='postmenu_'+postid).find('a')
+            posttime = posttable.find('td', {'class' : 'thead'}).get_text().strip()
+            postdata = {
+                'postid' : int(postid),
+                'message' : postmessage.get_text(),
+                'username' : postmenu.get_text(),
+                'profile' : postmenu.get('href'),
+                'userid' : postmenu.get('href').split("?u=")[1],
+                'posttime' : posttime
+            }
+            posts.append(postdata)
+        return posts
+
+    def getPostsByUser(self, userid, pp=25, page=1):
+        res = self._session.get("http://www.fer2.net/search.php?do=finduser&u={}".format(userid), allow_redirects=False)
+        res = self._session.get(res.headers['location']+"&pp={}&page={}".format(pp, page))
+        soup = BeautifulSoup(res.text, 'html.parser')
+
+        # reusable dio koda
+        pagestring = soup.find('div', {'class' : 'pagenav'}).find('td',{'class' : 'vbmenu_control'}).get_text()
+        maxpage = int(pagestring.split(' ')[3])
+        currentpage = int(pagestring.split(' ')[1])
+        print("Stranica: "+str(currentpage)+" od: "+str(maxpage))
+
+        posts = []
+        posttables = soup.find_all('table', id=re.compile("^post\d+"))
+        for posttable in posttables:
+            postid = posttable.get('id')[4:]
+
+            links = posttable.find_all('a', limit=4)
+
+            postmessage = '\n'.join(posttable.find('em').get_text().split('\n')[3:]).strip();
+
+            postdata = {
+                'postid' : int(postid),
+                'forumpath' : links[0].get('href'),
+                'forumid' : int(links[0].get('href').split("?f=")[1]),
+                'threadpath' : links[1].get('href'),
+                'threadid' : int(links[1].get('href').split("?t=")[1]),
+                'userprofile' : links[2].get('href'),
+                'userid' : int(links[2].get('href').split("?u=")[1]),
+                'postlink' : links[3].get('href'),
+                'message' : postmessage
+            }
+
+            posts.append(postdata)
+        return posts
 
 def getPayload(paramsString, security_token = None):
 
