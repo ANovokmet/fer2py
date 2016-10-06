@@ -53,6 +53,7 @@ forum.sendProfileMessage(self, users[0]["userid"], "primjeti me")
 Burza hvalaova:
 ``` python
 for post in forum.getPostsByUser(9323):
+  #hvala=thanks, grr=groan, lol=lol
   forum.doActionPost(post['postid'], 'thanks')
   
 for post in forum.getThreadPosts(17653, page=2902):
