@@ -392,6 +392,93 @@ class Fer2(object):
             posts.append(postdata)
         return posts
 
+    def addUserAsFriend(self, username):
+        data = {
+            'makefriends': 1, #nedostaje kad "Dodaj kontakt"
+            'ajax': 1,
+            's': '',
+            'securitytoken': self._security_token,
+            'do': 'updatelist',
+            'userlist': 'buddy',
+            'username': username
+        }
+
+        res = self._session.post("http://www.fer2.net/profile.php?do=updatelist&userlist=buddy", data=data)
+
+    def getOnlineUsers(self, pp=20, page=1, sort='username', order='asc'):
+        res = self._session.get("http://www.fer2.net/online.php?sort={}&order={}&pp={}&page={}".format(sort,order,pp,page))
+        soup = BeautifulSoup(res.text, 'html.parser')
+
+        users = []
+
+        for usertr in soup.find(id='woltable').find_all('tr')[2:]:
+            a = usertr.find('a')
+            td = usertr.find('td', {'class' : 'alt2'})
+
+            user = {
+                'profile': a.get('href'),
+                'userid': int(a.get('href').split("?u=")[1]),
+                'username': a.text,
+                'location': td.get_text().strip().replace('\r\n\t\t\n\n',' ')
+            }
+
+            users.append(user)
+
+        return users
+
+    def joinGroup(self, usergroupid):
+        data = {
+            's': '',
+            'securitytoken': self._security_token,
+            'do': 'joingroup',
+            'usergroupid' : usergroupid
+        }
+
+        res = self._session.post("http://www.fer2.net/profile.php?do=joingroup", data=data)
+
+    def leaveGroup(self, usergroupid):
+        data = {
+            's': '',
+            'securitytoken': self._security_token,
+            'do': 'leavegroup',
+            'usergroupid' : usergroupid
+        }
+
+        res = self._session.post("http://www.fer2.net/profile.php?do=leavegroup", data=data)
+
+    def getGroups(self):
+        res = self._session.get("http://www.fer2.net/profile.php?do=editusergroups")
+        soup = BeautifulSoup(res.text, 'html.parser')
+
+        canjoin = []
+        form = soup.find('form', {'action' : "profile.php?do=joingroup"})
+        for tr in form.find_all('tr')[2:-1]:
+            groupname = tr.find('td').get_text().strip()
+            groupid = int(tr.find('input').get('value'))
+            group = {
+                'groupname' : groupname,
+                'groupid' : groupid
+            }
+            canjoin.append(group)
+
+        canleave = []
+        form = soup.find('form', {'action' : "profile.php?do=leavegroup"})
+        for tr in form.find_all('tr')[3:-1]:
+            groupname = tr.find('td').get_text().strip()
+            groupid = int(tr.find('input').get('value'))
+            group = {
+                'groupname': groupname,
+                'groupid': groupid
+            }
+            canleave.append(group)
+
+        return {
+            'canjoin' : canjoin,
+            'canleave' : canleave
+        }
+
+
+
 def getPayload(paramsString, security_token = None):
 
     parts1 = paramsString.split("&securitytoken=")
